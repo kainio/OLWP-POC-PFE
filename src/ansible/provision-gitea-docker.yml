@@ -1,0 +1,206 @@
+---
+- name: Deploy Gitea stack and provision
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Check if Docker Compose v2 is installed
+      command: docker compose version
+      register: docker_compose_version
+      changed_when: false
+      failed_when: docker_compose_version.rc != 0
+
+    - name: Copy env_vars-example.yaml to .env_vars.yaml
+      copy:
+        src: "{{ playbook_dir }}/host_vars/localhost/.env_vars-example.yaml"
+        dest: "{{ playbook_dir }}/host_vars/localhost/.env_vars.yaml"
+      when: not ansible_check_mode
+
+    - name: Load environment variables from .env_vars.yaml
+      include_vars:
+        file: "{{ playbook_dir }}/host_vars/localhost/.env_vars.yaml"
+        name: env_vars
+
+    - name: Set Gitea variables from .env_vars.yaml
+      set_fact:
+        containers_prefix: "{{ env_vars.CONTAINERS_PREFIX }}"
+        gitea_version: "{{ env_vars.GITEA_VERSION }}"
+        gitea_remote_url: "{{ env_vars.GITEA_REMOTE_URL }}"
+        gitea_local_url: "{{ env_vars.GITEA_LOCAL_URL }}"
+        gitea_secret_key: "{{ env_vars.GITEA_SECRET_KEY }}"
+        gitea_internal_token: "{{ env_vars.GITEA_INTERNAL_TOKEN }}"
+        gitea_allowed_host_list: "{{ env_vars.GITEA_ALLOWED_HOST_LIST }}"
+        gitea_user: "{{ env_vars.GITEA_USERNAME }}"
+        gitea_password: "{{ env_vars.GITEA_PASSWORD }}"
+        gitea_user_email: "{{ env_vars.GITEA_USER_EMAIL }}"
+        repo_name: "{{ env_vars.GITEA_REPO_NAME }}"
+        repo_owner: "{{ env_vars.GITEA_REPO_OWNER }}"
+        gitea_runner_name: "{{ env_vars.GITEA_RUNNER_NAME }}"
+        gitea_runner_labels: "{{ env_vars.GITEA_RUNNER_LABELS }}"
+        runner_job_container_image: "{{ env_vars.RUNNER_JOB_CONTAINER_IMAGE }}"
+        gitea_webhook_secret: "{{ env_vars.GITEA_WEBHOOK_SECRET }}"
+
+    - name: Check if Docker Compose v2 is installed
+      command: docker compose up gitea -d
+      register: gitea_up
+      changed_when: false
+      failed_when: gitea_up.rc != 0
+      environment:
+        GITEA_ALLOWED_HOST_LIST: "{{ gitea_allowed_host_list }}"
+        CONTAINERS_PREFIX: "{{ containers_prefix }}"
+        GITEA__security__SECRET_KEY: "{{ gitea_secret_key }}"
+        GITEA__security__INTERNAL_TOKEN: "{{ gitea_internal_token }}"
+        GITEA__SERVER__ROOT_URL: "{{ gitea_local_url }}"
+        GITEA_VERSION: "{{ gitea_version }}"
+
+    - name: Wait for Gitea to be up
+      uri:
+        url: "{{ gitea_remote_url }}/api/healthz"
+        status_code: 200
+        validate_certs: no
+      register: gitea_up
+      until: gitea_up.status == 200
+      retries: 20
+      delay: 5
+
+    - name: Copy app.ini to service container volume
+      command: >
+        docker compose cp ./templates/gitea/conf/app.ini gitea:/data/gitea/conf/app.ini
+      environment:
+        GITEA_ALLOWED_HOST_LIST: "{{ gitea_allowed_host_list }}"
+        CONTAINERS_PREFIX: "{{ containers_prefix }}"
+        GITEA__security__SECRET_KEY: "{{ gitea_secret_key }}"
+        GITEA__security__INTERNAL_TOKEN: "{{ gitea_internal_token }}"
+        GITEA_VERSION: "{{ gitea_version }}"
+
+    - name: Change app.ini file permissions
+      command: >
+        docker compose exec gitea chown git:git  /data/gitea/conf/app.ini
+
+    - name: Create user Admin via docker compose exec
+      command: >
+        docker compose exec -T --user git gitea gitea --config /data/gitea/conf/app.ini admin user create
+        --username {{ gitea_user }}
+        --password {{ gitea_password }}
+        --email {{ gitea_user_email }}
+        --admin
+        --must-change-password=false
+      environment:
+        GITEA_ALLOWED_HOST_LIST: "{{ gitea_allowed_host_list }}"
+        CONTAINERS_PREFIX: "{{ containers_prefix }}"
+        GITEA__security__SECRET_KEY: "{{ gitea_secret_key }}"
+        GITEA__security__INTERNAL_TOKEN: "{{ gitea_internal_token }}"
+        GITEA_VERSION: "{{ gitea_version }}"
+      register: create_admin_user
+      run_once: true
+      ignore_errors: yes
+
+    - name: Create API token for admin
+      uri:
+        url: "{{ gitea_remote_url }}/api/v1/users/{{ gitea_user }}/tokens"
+        method: POST
+        body_format: json
+        body:
+          name: "admin-token"
+          scopes: ["all"]
+        headers:
+          Content-Type: "application/json"
+          Authorization: "Basic {{ (gitea_user + ':' + gitea_password) | b64encode }}"
+        status_code: 201
+        validate_certs: no
+      register: api_token_response
+      run_once: true
+      ignore_errors: yes
+
+    - name: Set API token fact
+      set_fact:
+        gitea_api_token: "{{ api_token_response.json.sha1 }}"
+
+    - name: Create repository
+      uri:
+        url: "{{ gitea_remote_url }}/api/v1/user/repos"
+        method: POST
+        body_format: json
+        body:
+          name: "{{ repo_name }}"
+          private: true
+        headers:
+          Content-Type: "application/json"
+          Authorization: "token {{ gitea_api_token }}"
+        status_code: 201
+        validate_certs: no
+      register: repo_created
+      run_once: true
+      ignore_errors: yes
+
+    - name: Create runner registration token
+      uri:
+        url: "{{ gitea_remote_url }}/api/v1/repos/{{ gitea_user }}/{{ repo_name }}/actions/runners/registration-token"
+        method: GET
+        headers:
+          Authorization: "token {{ gitea_api_token }}"
+        status_code: 200
+        validate_certs: no
+      register: runner_token_response
+      run_once: true
+      ignore_errors: yes
+
+    - name: Set runner registration token fact
+      set_fact:
+        gitea_runner_registration_token: "{{ runner_token_response.json.token }}"
+
+    - name: Create Web Hook token for admin
+      uri:
+        url: "{{ gitea_remote_url }}/api/v1/repos/{{ gitea_user }}/{{ repo_name }}/hooks"
+        method: POST
+        body_format: json
+        body:
+          active: true
+          config:
+            url: "http://integration-service:3001/api/webhooks/gitea"
+            content_type: "json"
+            secret: "{{ gitea_webhook_secret }}"
+          events: ["delete", "pull_request"]
+          type: "gitea"
+        headers:
+          Content-Type: "application/json"
+          Authorization: "token {{ gitea_api_token }}"
+        status_code: 201
+        validate_certs: no
+      register: api_hook_response
+      run_once: true
+      when: api_hook_response is not defined or api_hook_response is failed
+      ignore_errors: yes
+
+    - name: Generate .env file from template
+      ansible.builtin.template:
+        src: templates/.env.example
+        dest: ../.env
+        mode: "0644"
+      vars:
+        containers_prefix: "{{ containers_prefix }}"
+        gitea_version: "{{ gitea_version }}"
+        gitea_remote_url: "{{ gitea_remote_url }}"
+        gitea_local_url: "{{ gitea_local_url }}"
+        gitea_secret_key: "{{ gitea_secret_key }}"
+        gitea_internal_token: "{{ gitea_internal_token }}"
+        gitea_allowed_host_list: "{{ gitea_allowed_host_list }}"
+        gitea_user: "{{ gitea_user }}"
+        gitea_password: "{{ gitea_password }}"
+        gitea_user_email: "{{ gitea_user_email }}"
+        repo_name: "{{ repo_name }}"
+        repo_owner: "{{ repo_owner }}"
+        gitea_runner_name: "{{ gitea_runner_name }}"
+        gitea_runner_labels: "{{ gitea_runner_labels }}"
+        runner_job_container_image: "{{ runner_job_container_image }}"
+        gitea_webhook_secret: "{{ gitea_webhook_secret }}"
+        gitea_runner_registration_token: "{{ gitea_runner_registration_token }}"
+        gitea_token: "{{ gitea_api_token }}"
+
+    - name: Generate runner-config.yml file from template
+      ansible.builtin.template:
+        src: templates/gitea-runner/runner-config.yaml
+        dest: ../runner-config.yaml
+        mode: "0644"
+      vars:
+        containers_prefix: "{{ containers_prefix }}"

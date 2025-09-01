@@ -1,0 +1,26 @@
+{
+  "name": "cdm-validation-scripts",
+  "version": "1.0.0",
+  "description": "CDM validation scripts for Gitea CI/CD pipeline",
+  "main": "validate-cdm-schema.js",
+  "scripts": {
+    "validate:schema": "node validate-cdm-schema.js",
+    "validate:business": "node validate-business-rules.js",
+    "validate:metadata": "node validate-metadata.js",
+    "validate:all": "npm run validate:schema && npm run validate:business && npm run validate:metadata",
+    "report": "node generate-validation-report.js",
+    "test": "npm run validate:all && npm run report"
+  },
+  "dependencies": {
+    "joi": "^17.10.0"
+  },
+  "keywords": [
+    "cdm",
+    "validation",
+    "microsoft-cdm",
+    "gitea",
+    "ci-cd"
+  ],
+  "author": "CDM Integration Team",
+  "license": "MIT"
+}

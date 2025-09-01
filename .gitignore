@@ -1,0 +1,94 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+.npm/
+dist/
+build/
+coverage/
+lib/
+tmp/
+temp/
+.cache/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Docker
+docker-compose.override.yml
+docker-compose.*.yml
+.docker/
+*.pid
+
+# Grafana
+grafana.db
+grafana.ini
+plugins/
+data/
+public/build/
+grafana-storage/
+
+# Gitea
+custom/
+gitea.db
+gitea.log
+gitea-repositories/
+sessions/
+indexers/
+queue/
+public/img/avatar/
+public/img/repo-avatars/
+gitea-data/
+
+# OpenSearch
+opensearch-data/
+
+# Test output
+test-results/
+junit.xml
+*.lcov
+
+
+*.bak
+*.orig
+*.rej
+
+# Local scripts or tools
+scripts/local/
+tools/
+
+# Editor/project files
+*.code-workspace
+*.sublime-workspace
+*.sublime-project
+
+# Backup files
+*~
+*.tmp
+*.temp
+
+cdm-data
+
+runner-config.yaml
+
+# Ansible host vars
+.env_vars.yaml

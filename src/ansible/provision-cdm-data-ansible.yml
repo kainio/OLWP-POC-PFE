@@ -1,0 +1,50 @@
+---
+- name: Ansible playbook to provision cdm-data-ansible
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Load environment variables from .env_vars.yaml
+      include_vars:
+        file: "{{ playbook_dir }}/host_vars/localhost/.env_vars.yaml"
+        name: env_vars
+
+    - name: Set Gitea variables from .env_vars.yaml
+      set_fact:
+        gitea_user: "{{ env_vars.GITEA_USERNAME }}"
+        gitea_password: "{{ env_vars.GITEA_PASSWORD }}"
+        repo_name: "{{ env_vars.GITEA_REPO_NAME }}"
+        gitea_remote_url: "{{ env_vars.GITEA_REMOTE_URL }}"
+
+    - name: Wait for Gitea to be up
+      uri:
+        url: "{{ gitea_remote_url }}/api/healthz"
+        status_code: 200
+        validate_certs: no
+      register: gitea_up
+      until: gitea_up.status == 200
+      retries: 20
+      delay: 5
+
+    - name: Copy cdm-data-example directory to cdm-data
+      command: >
+        cp -R ../cdm-data-example ../{{ repo_name }}
+      when: not ansible_check_mode
+
+    - name: git initialize cdm-data
+      command: chdir=../{{ repo_name }} git init
+
+    - name: git checkout main branch
+      command: chdir=../{{ repo_name }} git checkout -b main
+
+    - name: git add all changes
+      command: chdir=../{{ repo_name }} git add .
+
+    - name: git commit changes
+      command: chdir=../{{ repo_name }} git commit -m "Initial commit"
+
+    - name: Add remote origin
+      command: chdir=../{{ repo_name }} git remote add origin {{ gitea_remote_url }}/{{ gitea_user }}/{{ repo_name }}.git
+
+    - name: Push changes to remote repository
+      command: chdir=../{{ repo_name }} git push -u http://{{ gitea_user }}:{{ gitea_password }}@{{ gitea_remote_url | regex_replace('^https?://', '') }}/{{ gitea_user }}/{{ repo_name }}.git main

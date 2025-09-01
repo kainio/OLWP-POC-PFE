@@ -1,0 +1,222 @@
+services:
+  # PostgreSQL Database for Gitea and other services
+  postgres:
+    image: postgres:15-alpine
+    container_name: ${CONTAINERS_PREFIX}postgres
+    #restart: unless-stopped
+    environment:
+      POSTGRES_DB: gitea
+      POSTGRES_USER: gitea
+      POSTGRES_PASSWORD: gitea123
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5442:5432"
+    networks:
+      - app-network
+
+
+  # Gitea Git Service
+  gitea:
+    image: gitea/gitea:${GITEA_VERSION}
+    container_name: ${CONTAINERS_PREFIX}gitea
+    #restart: unless-stopped
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__security__INSTALL_LOCK=true
+      - GITEA__security__SECRET_KEY=${GITEA_SECRET_KEY}
+      - GITEA__security__INTERNAL_TOKEN=${GITEA_INTERNAL_TOKEN}
+      - GITEA__webhook__ALLOWED_HOST_LIST=${GITEA_ALLOWED_HOST_LIST}
+      - GITEA__webhook__SKIP_TLS_VERIFY=true
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=postgres:5432
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=gitea123
+      - GITEA__SERVER__ROOT_URL=${GITEA_URL}
+    volumes:
+      - gitea-data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3402:3000"
+      - "3422:22"
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+
+  # OpenSearch for reference data
+  opensearch:
+    image: opensearchproject/opensearch:${OPENSEARCH_VERSION}
+    container_name: ${CONTAINERS_PREFIX}opensearch
+    #restart: unless-stopped
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'curl -s http://localhost:9200/_cluster/health | grep -vq ''"status":"red"''',
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - "9240:9200"
+      - "9640:9600"
+    networks:
+      - app-network
+
+  # OpenSearch Dashboards
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION}
+    container_name: ${CONTAINERS_PREFIX}opensearch-dashboards
+    #restart: unless-stopped
+    ports:
+      - "5641:5601"
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+    depends_on:
+      - opensearch
+    networks:
+      - app-network
+
+  # Grafana with Volkov Labs Business Forms Plugin
+  grafana:
+    image: grafana/grafana-oss:${GRAFANA_VERSION}
+    container_name: ${CONTAINERS_PREFIX}grafana
+    #restart: unless-stopped
+    ports:
+      - "3410:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_INSTALL_PLUGINS=volkovlabs-form-panel,marcusolsson-json-datasource,yesoreyeram-boomtable-panel,marcusolsson-dynamictext-panel,grafana-opensearch-datasource
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_USERS_HOME_PAGE=/d/contact-business-forms/cdm-contact-management-business-forms
+      - GF_USERS_DEFAULT_THEME=light
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - app-network
+
+  # Mock Moqui Framework Service
+  mock-moqui:
+    build:
+      context: ./mock-moqui
+      dockerfile: Dockerfile
+    container_name: ${CONTAINERS_PREFIX}mock-moqui
+    #restart: unless-stopped
+    ports:
+      - "8480:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+    volumes:
+      - ./mock-moqui:/app
+      - /app/node_modules
+    networks:
+      - app-network
+
+  # Node.js Integration Service
+  integration-service:
+    build:
+      context: ./integration-service
+      dockerfile: Dockerfile
+    container_name: ${CONTAINERS_PREFIX}integration-service
+    #restart: unless-stopped
+    ports:
+      - "3401:3001"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - GITEA_URL=${GITEA_URL}
+      - GITEA_TOKEN=${GITEA_TOKEN}
+      - GITEA_WEBHOOK_SECRET=${GITEA_WEBHOOK_SECRET}
+      - OPENSEARCH_URL=${OPENSEARCH_URL}
+      - OPENSEARCH_INDEX_CONTACTS=${OPENSEARCH_INDEX_CONTACTS}
+      - OPENSEARCH_INDEX_REFERENCE=${OPENSEARCH_INDEX_REFERENCE}
+      - MOQUI_URL=${MOQUI_URL}
+      - MOQUI_USERNAME=${MOQUI_USERNAME}
+      - MOQUI_PASSWORD=${MOQUI_PASSWORD}
+      - EMAIL_NOTIFICATIONS=${EMAIL_NOTIFICATIONS}
+      - GRAFANA_URL=${GRAFANA_URL}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FILE=${LOG_FILE}
+      - CDM_SCHEMA_VERSION=${CDM_SCHEMA_VERSION}
+      - CDM_NAMESPACE=${CDM_NAMESPACE}
+    volumes:
+      - ./integration-service:/app
+      - /app/node_modules
+    depends_on:
+      gitea:
+        condition: service_started
+      opensearch:
+        condition: service_healthy
+      mock-moqui:
+        condition: service_started
+    networks:
+      - app-network
+
+  # Gitea Runner Service
+  gitea-runner:
+    image: gitea/act_runner:${GITEA_RUNNER_VERSION}
+    container_name: ${CONTAINERS_PREFIX}gitea-runner
+    environment:
+      - "CONFIG_FILE=/var/gitea-config/config.yaml"
+      - GITEA_INSTANCE_URL=${GITEA_URL}
+      - GITEA_TOKEN=${GITEA_TOKEN}
+      - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_REGISTRATION_TOKEN}
+      - GITEA_RUNNER_NAME=${GITEA_RUNNER_NAME}
+      - GITEA_RUNNER_LABELS=${GITEA_RUNNER_LABELS}
+      - RUNNER_JOB_CONTAINER_IMAGE=${RUNNER_JOB_CONTAINER_IMAGE}
+    depends_on:
+      - gitea
+    volumes:
+      - ./runner-config.yaml:/var/gitea-config/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gitea-runner-data:/data
+    networks:
+      - app-network
+
+volumes:
+  grafana-storage:
+    name: "${CONTAINERS_PREFIX}grafana-storage"
+  postgres-data:
+    name: "${CONTAINERS_PREFIX}postgres-data"
+  gitea-data:
+    name: "${CONTAINERS_PREFIX}gitea-data"
+  gitea-ansible-data:
+    name: "${CONTAINERS_PREFIX}gitea-ansible-data"
+  opensearch-data:
+    name: "${CONTAINERS_PREFIX}opensearch-data"
+  gitea-runner-data:
+    name: "${CONTAINERS_PREFIX}gitea-runner-data"
+  postgres_ansible-data:
+    name: "${CONTAINERS_PREFIX}postgres_ansible-data"
+
+networks:
+  app-network:
+    name: "${CONTAINERS_PREFIX}app-network"
+    driver: bridge

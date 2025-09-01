@@ -1,0 +1,842 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "integration-service"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "displayLabels": ["name"],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": []
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "cacheDurationSeconds": 300,
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "integration-service"
+          },
+          "fields": [
+            {
+              "jsonPath": "$.data.pullRequests.open",
+              "name": "Open PRs",
+              "type": "number"
+            },
+            {
+              "jsonPath": "$.data.pullRequests.merged",
+              "name": "Merged PRs",
+              "type": "number"
+            }
+          ],
+          "method": "GET",
+          "queryParams": "",
+          "refId": "A",
+          "urlPath": "/api/data/git/stats"
+        }
+      ],
+      "title": "Git Repository Status",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "integration-service"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "cacheDurationSeconds": 300,
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "integration-service"
+          },
+          "fields": [
+            {
+              "jsonPath": "$.data.total",
+              "name": "Total Contacts",
+              "type": "number"
+            }
+          ],
+          "method": "GET",
+          "queryParams": "size=0",
+          "refId": "A",
+          "urlPath": "/api/data/contacts"
+        }
+      ],
+      "title": "Total Contacts Submitted",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "integration-service"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 20,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "buttonGroup": {
+          "orientation": "center",
+          "size": "md"
+        },
+        "confirmModal": {
+          "body": "Please confirm to update changed values",
+          "cancel": "Cancel",
+          "columns": {
+            "include": ["name", "oldValue", "newValue"],
+            "name": "Label",
+            "newValue": "New Value",
+            "oldValue": "Old Value"
+          },
+          "confirm": "Confirm",
+          "elementDisplayMode": "modified",
+          "title": "Confirm update request"
+        },
+        "confirmation": {
+          "columnGroup": {
+            "orientation": "horizontal"
+          },
+          "enabled": true
+        },
+        "elementValueChanged": "\nconst currentElement = context.element;\nconsole.log(\"currentElement\", currentElement)\n\n",
+        "elements": [
+          {
+            "clearErrors": false,
+            "id": "fullName",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "custom",
+            "queryField": "",
+            "title": "Full Name",
+            "tooltip": "Enter the contact's full name",
+            "type": "string",
+            "uid": "0b35897b-0dde-44f3-9877-c255edaa55c4",
+            "value": "",
+            "width": 60
+          },
+          {
+            "clearErrors": false,
+            "id": "emailAddress",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "custom",
+            "queryField": "",
+            "title": "Email Address",
+            "tooltip": "Enter a valid email address",
+            "type": "string",
+            "uid": "b98bfc0a-7bbe-4286-9d0e-7ca51f3741b2",
+            "value": "",
+            "width": 60
+          },
+          {
+            "clearErrors": false,
+            "id": "phoneNumber",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "custom",
+            "queryField": "",
+            "title": "Phone Number",
+            "tooltip": "Enter phone number with country code",
+            "type": "string",
+            "uid": "74c96c06-6dcb-42fd-9091-a92ec2f02d9c",
+            "value": "",
+            "width": 60
+          },
+          {
+            "clearErrors": false,
+            "id": "company",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "custom",
+            "queryField": "",
+            "title": "Company",
+            "tooltip": "Enter company or organization name",
+            "type": "string",
+            "uid": "d0aa0d04-992e-496a-ab8b-70e4bf152e98",
+            "value": "",
+            "width": 60
+          },
+          {
+            "allowCustomValue": false,
+            "clearErrors": false,
+            "getOptions": "return context.panel.data.series[0].fields[0].values[0].jobTitles",
+            "id": "jobTitle",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "Code",
+            "queryField": {
+              "label": "A:jobTitles",
+              "refId": "A",
+              "value": "jobTitles"
+            },
+            "queryOptions": {
+              "label": "jobTitles",
+              "source": "A",
+              "value": "jobTitles"
+            },
+            "title": "Job Title",
+            "tooltip": "Select or enter job title",
+            "type": "select",
+            "uid": "d268ad0b-2768-416b-8d93-5f484ccf9693",
+            "value": "",
+            "width": 60
+          },
+          {
+            "allowCustomValue": false,
+            "clearErrors": false,
+            "getOptions": "return context.panel.data.series[0].fields[0].values[0].departments",
+            "id": "department",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "Code",
+            "title": "Department",
+            "tooltip": "Select department",
+            "type": "select",
+            "uid": "6262d739-5219-478c-bc8e-06d0945e727d",
+            "value": "",
+            "width": 60
+          },
+          {
+            "clearErrors": false,
+            "id": "addressLine1",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "custom",
+            "queryField": "",
+            "title": "Address Line 1",
+            "tooltip": "Street address",
+            "type": "string",
+            "uid": "250e39b8-aa5d-4f2e-ac66-b8dbafe3a939",
+            "value": "",
+            "width": 60
+          },
+          {
+            "clearErrors": false,
+            "id": "addressLine2",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "custom",
+            "queryField": "",
+            "title": "Address Line 2",
+            "tooltip": "Apartment, suite, etc.",
+            "type": "string",
+            "uid": "5e99418f-8a41-4494-b596-231a75cb6011",
+            "value": "",
+            "width": 60
+          },
+          {
+            "allowCustomValue": false,
+            "clearErrors": false,
+            "getOptions": "return context.panel.data.series[0].fields[0].values[0].countries",
+            "id": "country",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "Code",
+            "showIf": "",
+            "title": "Country",
+            "tooltip": "Select country",
+            "type": "select",
+            "uid": "b64485f5-68f6-4079-88a3-a2880fdb0775",
+            "value": "US",
+            "width": 60
+          },
+          {
+            "allowCustomValue": false,
+            "clearErrors": false,
+            "getOptions": "\nconsole.log(\"Initial States GET options states\", context.panel.data.series[0].fields[0].values[0].states.filter((s) => s.country === context.panel.elements[8].value).map((s) => ({ \"value\": s.value, \"label\": s.label })));\nreturn context.panel.data.series[0].fields[0].values[0].states.filter((s) => s.country === context.panel.elements.find(x=> x.id === \"country\")?.value).map((s) => ({ \"value\": s.value, \"label\": s.label }));\n",
+            "id": "stateProvince",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "Code",
+            "title": "State/Province",
+            "tooltip": "Select state or province",
+            "type": "select",
+            "uid": "51edd7d2-26a9-477e-b0d7-70f2e4c0f0cc",
+            "value": "",
+            "width": 60
+          },
+          {
+            "clearErrors": false,
+            "id": "city",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "custom",
+            "queryField": "",
+            "title": "City",
+            "tooltip": "City name",
+            "type": "string",
+            "uid": "1948f41a-1ce2-4561-a148-e9b2dfae256b",
+            "value": "",
+            "width": 60
+          },
+          {
+            "clearErrors": false,
+            "id": "postalCode",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "custom",
+            "queryField": "",
+            "title": "Postal Code",
+            "tooltip": "ZIP or postal code",
+            "type": "string",
+            "uid": "e42ccf6c-5ed2-4d28-8115-7bf07a1572a6",
+            "value": "",
+            "width": 60
+          },
+          {
+            "allowCustomValue": false,
+            "clearErrors": false,
+            "getOptions": "return context.panel.data.series[0].fields[0].values[0].contactMethods",
+            "id": "preferredContactMethod",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "Code",
+            "showIf": "",
+            "title": "Preferred Contact Method",
+            "tooltip": "How would you like to be contacted?",
+            "type": "select",
+            "uid": "dd58668d-6f4f-4c2b-b59f-1007c83cca33",
+            "value": "email",
+            "width": 60
+          },
+          {
+            "clearErrors": false,
+            "id": "notes",
+            "isEscaping": true,
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "custom",
+            "queryField": "",
+            "rows": 3,
+            "title": "Notes",
+            "tooltip": "Additional information or comments",
+            "type": "textarea",
+            "uid": "446f26c9-be29-4b17-b6b0-9a6685c0aad5",
+            "value": "",
+            "width": 50
+          },
+          {
+            "clearErrors": false,
+            "id": "tags",
+            "labelWidth": 30,
+            "options": [],
+            "optionsSource": "custom",
+            "queryField": "",
+            "title": "Tags",
+            "tooltip": "Comma-separated tags",
+            "type": "string",
+            "uid": "84d56a43-776e-4b15-89e7-2a4fc7c71b62",
+            "value": "",
+            "width": 60
+          }
+        ],
+        "initial": {
+          "code": "console.log(\"Initial action\")",
+          "contentType": "application/json",
+          "datasource": "integration-service",
+          "getPayload": "/api/data/reference",
+          "highlight": false,
+          "highlightColor": "red",
+          "method": "-",
+          "payload": {
+            "cacheDurationSeconds": 300,
+            "fields": [
+              {
+                "jsonPath": ""
+              }
+            ],
+            "method": "GET",
+            "queryParams": "",
+            "urlPath": ""
+          }
+        },
+        "layout": {
+          "orientation": "vertical",
+          "padding": 10,
+          "sectionVariant": "default",
+          "variant": "single"
+        },
+        "reset": {
+          "backgroundColor": "purple",
+          "foregroundColor": "yellow",
+          "icon": "process",
+          "text": "Reset",
+          "variant": "hidden"
+        },
+        "resetAction": {
+          "code": "",
+          "confirm": false,
+          "getPayload": "return {}",
+          "mode": "initial",
+          "payload": {}
+        },
+        "saveDefault": {
+          "icon": "save",
+          "text": "Save Default",
+          "variant": "hidden"
+        },
+        "submit": {
+          "backgroundColor": "purple",
+          "contentType": "application/json",
+          "foregroundColor": "yellow",
+          "icon": "cloud-upload",
+          "method": "POST",
+          "text": "Submit",
+          "url": "http://integration-service:3001/api/data/contacts",
+          "variant": "primary"
+        },
+        "sync": false,
+        "update": {
+          "code": "",
+          "confirm": false,
+          "contentType": "application/json",
+          "getPayload": "const payload = {};\ncontext.panel.elements.forEach((element) => {\n  if (!element.value) {\n    return;\n  }\n  payload[element.id] = element.value;\n})\nreturn payload;",
+          "header": [],
+          "method": "POST",
+          "payload": {},
+          "payloadMode": "all",
+          "url": "http://localhost:3401/api/data/contacts"
+        },
+        "updateEnabled": "auto"
+      },
+      "pluginVersion": "5.1.0",
+      "targets": [
+        {
+          "cacheDurationSeconds": 300,
+          "fields": [
+            {
+              "jsonPath": "$.data",
+              "language": "jsonata",
+              "name": "initialData"
+            }
+          ],
+          "method": "GET",
+          "queryParams": "",
+          "refId": "A",
+          "urlPath": "/api/data/reference"
+        }
+      ],
+      "title": "Contact Form - CDM Data Entry",
+      "type": "volkovlabs-form-panel"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "integration-service"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "syncStatus"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "synced": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "✅ Synced"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "failed": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "❌ Failed"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "pending": {
+                        "color": "yellow",
+                        "index": 2,
+                        "text": "⏳ Pending"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 20,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Created"
+          }
+        ]
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "cacheDurationSeconds": 30,
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "integration-service"
+          },
+          "fields": [
+            {
+              "jsonPath": "$..fullName",
+              "name": "Full Name",
+              "type": "string"
+            },
+            {
+              "jsonPath": "$..emailAddress",
+              "name": "Email",
+              "type": "string"
+            },
+            {
+              "jsonPath": "$..jobTitle",
+              "name": "Job Title",
+              "type": "string"
+            },
+            {
+              "jsonPath": "$..createdOn",
+              "name": "Created",
+              "type": "time"
+            }
+          ],
+          "method": "GET",
+          "queryParams": "size=50",
+          "refId": "A",
+          "urlPath": "/api/data/contacts"
+        }
+      ],
+      "title": "Recent Contacts Submitted",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "integration-service"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "type"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "contact_synced": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "📋 Contact Synced"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "sync_failed": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "⚠️ Sync Failed"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "review_requested": {
+                        "color": "blue",
+                        "index": 2,
+                        "text": "👀 Review Requested"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 5,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Timestamp"
+          }
+        ]
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "cacheDurationSeconds": 30,
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "integration-service"
+          },
+          "fields": [
+            {
+              "jsonPath": "$..type",
+              "name": "Type",
+              "type": "string"
+            },
+            {
+              "jsonPath": "$..title",
+              "name": "Title",
+              "type": "string"
+            },
+            {
+              "jsonPath": "$..message",
+              "name": "Message",
+              "type": "string"
+            },
+            {
+              "jsonPath": "$..timestamp",
+              "name": "Timestamp",
+              "type": "time"
+            }
+          ],
+          "method": "GET",
+          "queryParams": "limit=20",
+          "refId": "A",
+          "urlPath": "/api/data/notifications"
+        }
+      ],
+      "title": "System Notifications & Workflow Events",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "refresh": "5s",
+  "schemaVersion": 41,
+  "tags": ["contact-management", "cdm", "business-forms", "volkov-labs"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "CDM Contact Management - Business Forms",
+  "uid": "contact-business-forms",
+  "version": 4
+}

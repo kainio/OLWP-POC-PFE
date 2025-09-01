@@ -1,0 +1,29 @@
+apiVersion: 1
+
+datasources:
+  - name: integration-service
+    type: marcusolsson-json-datasource
+    uid: integration-service
+    access: proxy
+    url: http://integration-service:3001
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: GET
+      httpHeaderName1: "Content-Type"
+      timeout: 30
+    secureJsonData:
+      httpHeaderValue1: "application/json"
+
+  - name: OpenSearch
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: http://opensearch:9200
+    isDefault: false
+    editable: true
+    jsonData:
+      database: contacts
+      version: "2.x"
+      timeField: createdOn
+      logMessageField: message
+      logLevelField: level
