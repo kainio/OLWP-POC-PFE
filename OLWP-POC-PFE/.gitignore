@@ -86,9 +86,9 @@ tools/
 *.tmp
 *.temp
 
-cdm-data
+/cdm-data
 
-runner-config.yaml
+/runner-config.yaml
 
 # Ansible host vars
 .env_vars.yaml
